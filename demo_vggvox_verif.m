@@ -1,4 +1,4 @@
-function demo_vggvox_verif(varargin)
+function dist=demo_vggvox_verif(id,varargin)
 % DEMO_VGGVOX_VERIF - minimal demo with the VGGVox model pretrained on the
 % VoxCeleb dataset for Speaker Verification
 
@@ -7,12 +7,29 @@ function demo_vggvox_verif(varargin)
 
 opts.modelPath = '' ;
 opts.gpu = 3;
-opts.dataDir = 'testfiles/verif'; 
+opts.dataDir = fullfile(vl_rootnn,'user'); 
 opts = vl_argparse(opts, varargin) ;
 
-% Example speech segments for input
-inpPath1 = fullfile(opts.dataDir, '8jEAjG6SegY_0000008.wav');
-inpPath2 = fullfile(opts.dataDir, 'x6uYqmx31kE_0000001.wav'); 
+% Example speech segments for input 
+%cd('contrib\VGGVox');
+head='user';
+%id='1';%用户id，用于指定用户文件夹位置
+type='*.wav';
+full=fullfile(vl_rootnn,head,id,type);
+wavs=dir(full);
+N=length(wavs);
+names={};
+if N>0
+    for k=1:N
+        names{k}=wavs(k).name;
+    end
+else
+    disp("no wav files");
+    return
+end
+opts.dataDir=fullfile(opts.dataDir,id);%选择文件路径至相应文件夹
+inpPath1 = fullfile(opts.dataDir, names{1});
+inpPath2 = fullfile(opts.dataDir, names{2}); 
 
 % Load or download the VGGVox model for Verification
 modelName = 'vggvox_ver_net.mat' ;
@@ -30,7 +47,7 @@ if isempty(ok)
 else
     opts.modelPath = paths{ok} ;
 end
-load(opts.modelPath); net = dagnn.DagNN.loadobj(netStruct);
+load(opts.modelPath); net = dagnn.DagNN.loadobj(netStruct);dagnn.ContrastiveLoss
 
 % Remove loss layers and add distance layer
 names = {'loss'} ;
@@ -63,7 +80,7 @@ p2 = buckets.pool(s2==buckets.width);
 
 net.layers(22).block.poolSize=[1 p1];
 net.layers(47).block.poolSize=[1 p2];
-featid = structfind(net.vars,'name','distance');
+featid = strcmp({net.vars.name},'distance');
 net.eval({ 'input_b1', gpuArray(inp1) ,'input_b2', gpuArray(inp2) });
 dist = gather(squeeze(net.vars(featid).value));
 

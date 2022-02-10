@@ -8,11 +8,11 @@ function demo_vggvox_identif(varargin)
 
 opts.modelPath = '' ;
 opts.gpu = 3;
-opts.dataDir = 'testfiles/ident';
+opts.dataDir = 'testfiles\ident';
 opts = vl_argparse(opts, varargin) ;
 
 % Example speech segments for input
-inpPath = fullfile(opts.dataDir, 'Y8hIVOBuels_0000002.wav');  %This speech segment belongs to speaker class 1
+inpPath = fullfile(opts.dataDir, '00001.wav');  %This speech segment belongs to speaker class 1
 
 % Load or download the VGGVox model for Identification
 modelName = 'vggvox_ident_net.mat' ;
@@ -44,9 +44,9 @@ net.conserveMemory = false;
 
 % Load input and do a forward pass
 inp = test_getinput(inpPath,net.meta,buckets);
-s1 = size(inp,2);
-p1 = buckets.pool(s1==buckets.width);
-net.layers{16}.pool=[1 p1];
+s1 = size(inp,2);%计算输入的第2维长度
+p1 = buckets.pool(s1==buckets.width);%从桶中找到对应宽度的pool值
+net.layers{16}.pool=[1 p1];%将第16层的pool值修改为[1,p1]
 
 res = vl_simplenn(net,inp);
 prob 		= gather(squeeze(res(20).x(:,:,:,:)));
